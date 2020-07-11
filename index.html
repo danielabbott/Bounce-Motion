@@ -1,0 +1,132 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<title>Bounce</title>
+
+	<style>
+		canvas {
+			position: absolute;
+    		width: 800px;
+    		height: 600px;
+			left: calc(50% - 400px);
+			border: 3px solid black;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<canvas id="canv"></canvas>
+
+	<script>
+		c = document.getElementById("canv");
+
+		c.width = 800 * window.devicePixelRatio;
+		c.height = 600 * window.devicePixelRatio;
+
+
+		ctx = c.getContext("2d",{alpha:false});
+		ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+
+		start_time = 0;
+
+		function gameLoop(now) {
+			// Time starts at 0.0 and is in seconds
+			if(start_time == 0) {
+				start_time = now;
+			}
+			now -= start_time;
+			now /= 1000.0;
+
+			// Clear background
+			ctx.fillStyle  = '#ffffff'
+			ctx.fillRect(0, 0, 800, 600);
+
+
+
+			ctx.fillStyle  = '#ff8080'
+
+
+			// Moving rectangles
+			// ctx.fillRect(interp_lin(now, 50, 250), 100, 100,100);
+			// ctx.fillRect(interp_quad(now, 50, 250), 250, 100,100);
+			// ctx.fillRect(interp_bounce(now, 50, 250, 50.0, 0.2), 400, 100,100);
+
+
+
+			// Circle that gets bigger
+
+			sz = interp_bounce(now/0.8, 300, 350, 15.0, 5.0);
+
+			lineWidth = 2
+
+			ctx.beginPath();
+			ctx.arc(300, 300, sz/2, 0, 2 * Math.PI, false);
+			ctx.fill();
+			ctx.lineWidth = lineWidth*2;
+			ctx.strokeStyle = '#b53c3c';
+			ctx.stroke();
+
+
+			// Falling square
+
+			x = interp_bounce(now/2.0, lineWidth, 500-lineWidth, 50.0, 0.2);
+			if(x <= 500-lineWidth) {
+				// Box in air or just touching ground
+				ctx.fillRect(650, x, 100,100);
+				ctx.strokeRect(650, x, 100,100);
+			}
+			else {
+				// Squish
+				ctx.fillRect(650, x, 100, 600-lineWidth-x);
+				ctx.strokeRect(650, x, 100, 600-lineWidth-x);
+			}
+
+			if(now < 3.5) {
+				window.requestAnimationFrame(gameLoop);
+			}
+		}
+
+		window.requestAnimationFrame(gameLoop);
+
+
+		function interp_lin(t, startValue, endValue) {
+			t = Math.min(t, 1.0);
+			return startValue + (endValue-startValue) * t;
+		}
+
+		function interp_quad(t, startValue, endValue) {
+			t = Math.min(t, 1.0);
+			t = t*t;
+			return startValue + (endValue-startValue) * t;
+		}
+
+		// Ends at t=1.5
+		function interp_bounce(t, startValue, endValue, wobble_multiplier, wobble_amplitude) {
+			t = Math.min(t, 1.5);
+
+			// Transitions from a quadratic to a decreasing-amplitude sine wave at t=1.0
+
+			wobble = Math.sin(wobble_multiplier*(t-1.0))* 0.05 * (1.0 - (2.0*t-2.0));
+			wobble = wobble*wobble_amplitude+1.0;
+			movement = t*t;
+
+			if(t > 1.05) {
+				x = wobble;
+			}
+			else if (t < 0.95) {
+				x = movement;
+			}
+			else {
+				// Transition from quadratic motion to bouncing
+				x = movement + (wobble - movement) * ((t-0.95) * 10.0);
+			}
+
+			return startValue + (endValue-startValue) * x;
+		}
+	</script>
+
+</body>
+</html>
